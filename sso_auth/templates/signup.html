@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block title %}Cadastro{% endblock %}
+
+{% block content %}
+
+    <!-- Seção de Cadastro -->
+    <div class="container-login">
+        <div class="row align-items-center justify-content-center" style="height: 100vh">
+            <div class="col-lg-3"></div>
+
+            <div class="col-lg-6"> <!-- Largura maior para o formulário -->
+                <div class="bg-white p-4 rounded-3 shadow text-center">
+                    <h2 class="text-dark">Bem-vindo!</h2>
+                    <p class="text-dark text-muted">Crie sua conta preenchendo os campos abaixo.</p>
+
+                    <div class="divider my-3"></div>
+
+                    <form method="post" action="{% url 'signup' %}" class="form">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label text-dark">E-mail</label>
+                            <input type="email" class="form-control" name="email" id="email" placeholder="Digite seu e-mail" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password1" class="form-label text-dark">Senha</label>
+                            <input type="password" class="form-control" name="password1" id="password1" placeholder="Digite sua senha" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password2" class="form-label text-dark">Confirmar Senha</label>
+                            <input type="password" class="form-control" name="password2" id="password2" placeholder="Confirme sua senha" required>
+                        </div>
+
+                        <button type="submit" class="btn btn-success w-100">Cadastrar</button>
+                    </form>
+
+                    <div class="divider my-3"></div>
+
+                    <p class="text-dark text-muted">
+                        Esqueceu sua senha? <a href="#">Redefinir</a>
+                    </p>
+                </div>
+            </div>
+            
+            <div class="col-lg-3"></div>
+        </div>
+    </div>
+{% endblock %}
