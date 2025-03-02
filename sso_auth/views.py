@@ -107,7 +107,7 @@ def disable_2fa(request):
 def logout_page(request):
     logout(request)  
     messages.success(request, 'Você fez o logout com sucesso!') 
-    return redirect('login')
+    return redirect('/')
 
 def signup_view(request):
     if request.method == 'POST':
