@@ -45,7 +45,28 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'sso_auth',
+    'oauth2_provider',
+    'rest_framework',
 ]
+
+OAUTH2_PROVIDER = {
+    'SCOPES': {
+        'read': 'Read scope',                 # escopo para leitura de recursos básicos
+        'write': 'Write scope',               # escopo para escrita em recursos básicos
+        'groups': 'Access to your groups'     # escopo customizado para acessar grupos de usuário
+    }
+}
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    )
+}
+
+LOGIN_URL = '/login/'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

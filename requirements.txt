@@ -2,3 +2,5 @@ django
 qrcode
 pillow
 pyotp
+djangorestframework
+django-oauth-toolkit
