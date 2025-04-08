@@ -27,6 +27,15 @@ def home(request):
 
 def profile_view(request):   
     user = request.user
+    next_url = (
+        request.GET.get('next') or
+        request.session.get('next_url') or
+        '/'
+    )
+
+    # Se tiver vindo de algum redirect anterior com next, salva de novo
+    request.session['next_url'] = next_url
+    print(f"[PROFILE_VIEW] next_url = {next_url}")
     
     if not user.mfa_secret:
         user.mfa_secret = pyotp.random_base32()
@@ -46,50 +55,70 @@ def profile_view(request):
     qr_code = base64.b64encode(buffer.getvalue()).decode("utf-8")
 
     qr_code_data_uri = f"data:image/png;base64,{qr_code}"
-    return render(request, 'profile.html', {"qrcode": qr_code_data_uri})
+    return render(request, 'profile.html', {
+        "qrcode": qr_code_data_uri,
+        "next": next_url
+        })
 
 def verify_2fa(request):
     if request.method == 'POST':
         otp = request.POST.get('otp_code')
         user_id = request.POST.get('user_id')
+        next_url = request.POST.get('next') or '/'
+        print(f"[VERIFY_2FA - POST] next_url recebido: {next_url}")
+
         if not user_id:
-            messages.error(request, 'Usuário invalido! Por favor tente novamente.')
-            return render(request,'otp_verify.html', {'user_id': user_id})
+            messages.error(request, 'Usuário inválido!')
+            return render(request,'otp_verify.html', {'user_id': user_id, 'next': next_url})
         
         user = CustomUser.objects.get(id=user_id)
         if verify_2fa_otp(user, otp):
-            if request.user.is_authenticated:
-                messages.success(request, '2FA ativado com sucesso!')
-                return redirect('profile')
-
             login(request, user)
-            messages.success(request, 'Login com sucesso!')
-            return redirect('profile')
+            print(f"[VERIFY_2FA - POST] Código válido. Redirecionando para: {next_url}")
+            return redirect(next_url)  # redireciona para o "next" original
         else:
-            if request.user.is_authenticated:
-                messages.error(request, 'Código OTP inválido! Por favor tente novamente.')
-                return redirect('profile')
-            messages.error(request, 'Código OTP inválido. Por favor tente novamente')
-            return render(request,'otp_verify.html', {'user_id': user_id})
-       
-    return render(request,'otp_verify.html', {'user_id': user_id})
+            messages.error(request, 'Código OTP inválido.')
+            print(f"[VERIFY_2FA - POST] Código inválido. Recarregando OTP com next: {next_url}")
+            return render(request,'otp_verify.html', {'user_id': user_id, 'next': next_url})
+
+    # GET request: pega da query string
+    user_id = request.GET.get('user_id')
+    next_url = request.GET.get('next') or '/'
+    print(f"[VERIFY_2FA - GET] Exibindo página OTP com next: {next_url}")
+    return render(request, 'otp_verify.html', {'user_id': user_id, 'next': next_url})
+
 
 def login_page(request):
+    next_url = request.GET.get('next') or request.POST.get('next') or request.session.get('next_url') or '/'
+
+    if request.method == 'GET':
+        request.session['next_url'] = next_url
+        print(f"[LOGIN_PAGE] [GET] next_url salvo na sessão: {next_url}")
+
     if request.method == 'POST':
+        next_url = request.POST.get('next') or request.session.get('next_url') or '/'
+        print(f"[LOGIN_PAGE] [POST] Recuperado next_url da sessão ou POST: {next_url}")
+
         email = request.POST.get('email')
         password = request.POST.get('password')
         
         user = authenticate(request, username=email, password=password)
         
         if user is not None:
-            if user.mfa_enabled:
-                return render(request,'otp_verify.html', {'user_id': user.id})
             login(request, user)
-            messages.success(request, 'Login com sucesso!')
-            return redirect('profile') 
+
+            if not user.mfa_enabled:
+                messages.info(request, "Por favor ative o 2FA antes de continuar.")
+                return redirect('profile')
+
+            print(f"[LOGIN_PAGE] Redirecionando para verificação de OTP com next: {next_url}")
+            return render(request, 'otp_verify.html', {'user_id': user.id, 'next': next_url})
+
         else:
             messages.error(request, 'Email ou senha inválida! Por favor tente novamente.')
-    return render(request,'login.html')
+
+    print(f"[LOGIN_PAGE] Render de GET ou erro - next: {next_url}")
+    return render(request,'login.html', {'next': next_url})
 
 @login_required
 def disable_2fa(request):
@@ -110,25 +139,34 @@ def logout_page(request):
     return redirect('/')
 
 def signup_view(request):
+    next_url = (
+        request.GET.get('next') or
+        request.POST.get('next') or
+        request.session.get('next_url') or
+        '/'
+    )
+
+    if request.method == 'GET':
+        request.session['next_url'] = next_url
+        print(f"[SIGNUP_PAGE] [GET] next_url salvo na sessão: {next_url}")
+
     if request.method == 'POST':
         email = request.POST.get('email')
         password1 = request.POST.get('password1')
         password2 = request.POST.get('password2')
-        
-        # Check if passwords match
+
         if password1 != password2:
             messages.error(request, 'As senhas estão diferentes. Tente novamente.')
-            return render(request, 'signup.html')
+            return render(request, 'signup.html', {'next': next_url})
 
-        # Check if email is already taken
         if CustomUser.objects.filter(email=email).exists():
             messages.error(request, 'Email em uso. Tente outro.')
-            return render(request, 'signup.html')
+            return render(request, 'signup.html', {'next': next_url})
 
-        # Create the new user
         user = CustomUser.objects.create_user(username=email, email=email, password=password1)
         user.save()
         messages.success(request, 'Cadastro feito com sucesso! Agora você pode fazer o login.')
-        return redirect('login')
+        return redirect(f'/login?next={next_url}')
 
-    return render(request, 'signup.html')
+    return render(request, 'signup.html', {'next': next_url})
+

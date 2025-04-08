@@ -16,6 +16,7 @@
 
           <form method="POST" action="{% url 'verify_2fa' %}" class="form text-center">
             {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next }}">
             <div class="form-group text-">
               <div class="mx-auto" style="width: 30%;">
                 <input type="text" id="otp_code" name="otp_code" maxlength="6" required class="form-control" placeholder="Coloque o código OTP" />
@@ -30,4 +31,5 @@
       {% endif %}
     </div>
   </div>
+  <p class="text-muted small">Next: {{ next }}</p>
 {% endblock %}
