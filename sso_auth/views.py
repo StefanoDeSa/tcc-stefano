@@ -135,8 +135,9 @@ def disable_2fa(request):
 @login_required
 def logout_page(request):
     logout(request)  
-    messages.success(request, 'Você fez o logout com sucesso!') 
-    return redirect('/')
+    messages.success(request, 'Você fez o logout com sucesso!')
+    next_url = request.GET.get('next') or 'http://localhost:3000'
+    return redirect(next_url)
 
 def signup_view(request):
     next_url = (
