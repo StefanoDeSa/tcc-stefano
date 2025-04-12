@@ -132,7 +132,6 @@ def disable_2fa(request):
         messages.info(request, "2FA já está desativada.")
     return redirect('profile')
 
-@login_required
 def logout_page(request):
     logout(request)  
     messages.success(request, 'Você fez o logout com sucesso!')
