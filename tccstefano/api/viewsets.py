@@ -6,7 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from .serializers import CustomUser, CustomUserSerializer
 
 class CustomUserList(generics.ListAPIView):
-    permission_classes = []
+    permission_classes = [IsAuthenticated]
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
     
